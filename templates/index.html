@@ -33,19 +33,29 @@
             background-color: #212121; /* Dark input background */
             color: #e0e0e0; /* Light text color */
         }
-        button {
+        .button-group {
+            display: flex;
+            justify-content: space-between;
+        }
+        .generate-btn, .reset-btn {
             padding: 10px 15px;
-            background-color: #2196f3; /* Blue button */
             color: white;
-            border: 1px solid #1976d2; /* Sharp border */
+            border: 1px solid #424242; /* Sharp border */
             border-radius: 4px;
             cursor: pointer;
-            width: 100%;
-            margin-top: 10px;
+            width: 48%; /* Make both buttons take up 48% of the width */
         }
-        button:hover {
+        .generate-btn {
+            background-color: #2196f3; /* Blue button */
+        }
+        .generate-btn:hover {
             background-color: #1976d2; /* Darker blue on hover */
-            border: 1px solid #1976d2; /* Maintain sharp border */
+        }
+        .reset-btn {
+            background-color: #f44336; /* Red button */
+        }
+        .reset-btn:hover {
+            background-color: #d32f2f; /* Darker red on hover */
         }
         .error {
             margin-top: 10px;
@@ -65,10 +75,7 @@
         .download-btn {
             margin-top: 10px;
         }
-        .download-btn form {
-            display: inline-block;
-        }
-        .download-btn input[type="submit"] {
+        .download-btn button {
             background-color: #4caf50; /* Green button */
             color: white;
             padding: 10px 15px;
@@ -76,41 +83,64 @@
             border-radius: 4px;
             cursor: pointer;
         }
-        .download-btn input[type="submit"]:hover {
+        .download-btn button:hover {
             background-color: #45a049; /* Darker green on hover */
             border: 1px solid #45a049; /* Maintain sharp border */
-        }
-        .saved-message {
-            margin-top: 10px;
-            color: #8bc34a; /* Green success color */
-            text-align: center;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>QR Code Generator</h1>
-        <form method="POST">
-            <input type="text" name="url" placeholder="Enter the website URL" required>
-            <button type="submit">Generate QR Code</button>
+        <form method="POST" id="qr-form">
+            <input type="text" name="url" placeholder="Enter the text or website URL" required>
+            <div class="button-group">
+                <button type="submit" class="generate-btn">Generate QR Code</button>
+                <button type="button" id="reset-btn" class="reset-btn">Reset</button>
+            </div>
         </form>
         {% if qr_image %}
-            <div class="qr-image">
+            <div class="qr-image" id="qr-image">
                 <img src="data:image/png;base64,{{ qr_image|b64encode }}" alt="QR Code">
             </div>
-            <div class="download-btn">
-                <form action="/download" method="post" style="display:inline;">
-                    <input type="hidden" name="url" value="{{ qr_url }}">
-                    <input type="submit" value="Download QR Code">
-                </form>
+            <div class="download-btn" id="download-btn">
+                <button id="download-qr-btn">Download QR Code</button>
             </div>
-        {% endif %}
-        {% if saved %}
-            <div class="saved-message">QR Code has been saved to your Photos directory.</div>
         {% endif %}
         {% if error %}
             <div class="error">{{ error }}</div>
         {% endif %}
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const resetButton = document.getElementById('reset-btn');
+            const qrImageContainer = document.getElementById('qr-image');
+            const downloadButton = document.getElementById('download-btn');
+            const qrForm = document.getElementById('qr-form');
+            const downloadQRBtn = document.getElementById('download-qr-btn');
+
+            if (resetButton && qrImageContainer && downloadButton && qrForm && downloadQRBtn) {
+                resetButton.addEventListener('click', function() {
+                    qrImageContainer.remove();
+                    downloadButton.remove();
+                    qrForm.reset();
+                });
+
+                downloadQRBtn.addEventListener('click', function() {
+                    const qrImage = document.querySelector('.qr-image img');
+                    if (qrImage) {
+                        const imageUrl = qrImage.src;
+                        const link = document.createElement('a');
+                        link.href = imageUrl;
+                        link.download = 'qr-code.png'; // Set the filename for the download
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                    }
+                });
+            }
+        });
+    </script>
 </body>
 </html>
