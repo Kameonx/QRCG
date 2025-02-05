@@ -11,40 +11,45 @@
             justify-content: center;
             align-items: center;
             height: 100vh;
-            background-color: #f0f0f0;
+            background-color: #121212; /* Dark background */
+            color: #e0e0e0; /* Light text color */
         }
         .container {
-            background: white;
+            background: #1e1e1e; /* Darker container background */
             padding: 20px;
             border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 0 5px rgba(255, 255, 255, 0.1); /* Reduced box shadow for sharpness */
             max-width: 400px;
             width: 100%;
-            text-align: center; /* Center text within the container */
+            text-align: center;
+            border: 1px solid #424242; /* Sharp border */
         }
         input[type="text"] {
             width: calc(100% - 22px);
             padding: 10px;
             margin: 10px 0;
-            border: 1px solid #ccc;
+            border: 1px solid #424242; /* Sharp border */
             border-radius: 4px;
+            background-color: #212121; /* Dark input background */
+            color: #e0e0e0; /* Light text color */
         }
         button {
             padding: 10px 15px;
-            background-color: #007bff;
+            background-color: #2196f3; /* Blue button */
             color: white;
-            border: none;
+            border: 1px solid #1976d2; /* Sharp border */
             border-radius: 4px;
             cursor: pointer;
             width: 100%;
             margin-top: 10px;
         }
         button:hover {
-            background-color: #0056b3;
+            background-color: #1976d2; /* Darker blue on hover */
+            border: 1px solid #1976d2; /* Maintain sharp border */
         }
         .error {
             margin-top: 10px;
-            color: red;
+            color: #f44336; /* Red error color */
             text-align: center;
         }
         .qr-image {
@@ -55,6 +60,7 @@
             height: auto;
             display: block;
             margin: 0 auto; /* Center the image */
+            border: 1px solid #424242; /* Sharp border */
         }
         .download-btn {
             margin-top: 10px;
@@ -63,16 +69,16 @@
             display: inline-block;
         }
         .download-btn input[type="submit"] {
-            text-decoration: none;
-            background-color: #28a745;
+            background-color: #4caf50; /* Green button */
             color: white;
             padding: 10px 15px;
-            border: none;
+            border: 1px solid #45a049; /* Sharp border */
             border-radius: 4px;
             cursor: pointer;
         }
         .download-btn input[type="submit"]:hover {
-            background-color: #218838;
+            background-color: #45a049; /* Darker green on hover */
+            border: 1px solid #45a049; /* Maintain sharp border */
         }
     </style>
 </head>
