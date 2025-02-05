@@ -3,6 +3,11 @@ QR Code Generator README
 ---
 
 🔳 Using QR Code Generator
+
+🐍 Visit the web app hosted here: https://kameon.pythonanywhere.com/
+
+😿 If the site is down you may also follow the steps below:
+
 1. Download and Extract the contents of the Zipped folder.
 2. Open the QR Code Generator folder and double click the app.py.
 3. Ctrl + Left Click on the 'http://' address that appears in the cmd window.
