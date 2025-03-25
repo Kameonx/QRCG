@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QR Code Generator</title>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -36,8 +37,9 @@
         .button-group {
             display: flex;
             justify-content: space-between;
+            margin-bottom: 15px;
         }
-        .generate-btn, .reset-btn {
+        .generate-btn, .scan-qr-btn {
             padding: 10px 15px;
             color: white;
             border: 1px solid #424242; /* Sharp border */
@@ -51,11 +53,32 @@
         .generate-btn:hover {
             background-color: #1976d2; /* Darker blue on hover */
         }
+        .scan-qr-btn {
+            background-color: #D4AF37; /* Darker metallic gold */
+            border: 1px solid #B8860B; /* Darker gold border */
+        }
+        .scan-qr-btn:hover {
+            background-color: #B8860B; /* Even darker gold on hover */
+        }
         .reset-btn {
-            background-color: #f44336; /* Red button */
+            background-color: #f44336;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1em;
+            float: right; /* Position to the right */
+            margin-top: 5px;
         }
         .reset-btn:hover {
             background-color: #d32f2f; /* Darker red on hover */
+        }
+        .reset-container {
+            clear: both;
+            width: 100%;
+            text-align: right;
+            margin-top: 10px;
         }
         .error {
             margin-top: 10px;
@@ -87,15 +110,213 @@
             background-color: #45a049; /* Darker green on hover */
             border: 1px solid #45a049; /* Maintain sharp border */
         }
+        .button-group button {
+            width: 48%; /* Ensure both buttons take up 48% of the container width */
+            box-sizing: border-box; /* Include padding and border in the width calculation */
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1em; /* Ensure font size is the same */
+            margin: 0; /* Remove any margin that might affect sizing */
+        }
+        #video-container {
+            position: relative;
+            width: 100%;
+            margin-top: 20px;
+        }
+        #video {
+            width: 100%;
+            display: none;
+        }
+        #canvas {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%; 
+        }
+        #result-container {
+            position: absolute;
+            bottom: 10px; /* Changed from top to bottom */
+            left: 0;
+            right: 0; /* Added right: 0 */
+            margin: 0 auto; /* Center horizontally */
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            display: none;
+            z-index: 10;
+            width: 90%; /* Increased width to use more of the available space */
+            max-width: 350px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+            border: 1px solid #555;
+        }
+        #result-container a {
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+            display: block;
+            word-break: break-all;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #555;
+            padding-bottom: 10px;
+        }
+        .close-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: transparent;
+            color: white;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+        }
+        .close-btn:hover {
+            color: #f44336;
+        }
+        .link-container {
+            margin-right: 20px; /* Space for the X button */
+            padding: 10px 5px; /* Added padding */
+        }
+        #result {
+            margin-top: 10px;
+            color: #e0e0e0;
+            text-align: center;
+        }
+        .visit-btn {
+            display: block;
+            width: 100%;
+            margin-top: 10px;
+            padding: 8px 10px;
+            background: #2196f3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .visit-btn:hover {
+            background: #1976d2;
+        }
+        .scanner-controls {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+        }
+        
+        .stop-scan-btn {
+            background-color: #f44336;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .stop-scan-btn:hover {
+            background-color: #d32f2f;
+        }
+        
+        /* QR Code Scanner Frame Styles */
+        .scan-frame-container {
+            position: absolute;
+            top: 45%; /* Changed from 50% to raise the brackets */
+            left: 50%; /* Center horizontally */
+            transform: translate(-50%, -50%); /* Precisely center the container */
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .scan-frame {
+            position: relative;
+            width: 70%;
+            height: 70%;
+            aspect-ratio: 1/1;
+            max-width: 250px;
+            max-height: 250px;
+            border-radius: 10px;
+        }
+        
+        .scan-frame-corner {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border-width: 4px;
+            border-color: #f44336; /* Default red */
+            transition: all 0.3s ease;
+        }
+        
+        .scan-frame-corner.top-left {
+            top: 0;
+            left: 0;
+            border-top-style: solid;
+            border-left-style: solid;
+            border-right-style: none;
+            border-bottom-style: none;
+            border-top-left-radius: 5px;
+        }
+        
+        .scan-frame-corner.top-right {
+            top: 0;
+            right: 0;
+            border-top-style: solid;
+            border-right-style: solid;
+            border-left-style: none;
+            border-bottom-style: none;
+            border-top-right-radius: 5px;
+        }
+        
+        .scan-frame-corner.bottom-left {
+            bottom: 0;
+            left: 0;
+            border-bottom-style: solid;
+            border-left-style: solid;
+            border-top-style: none;
+            border-right-style: none;
+            border-bottom-left-radius: 5px;
+        }
+        
+        .scan-frame-corner.bottom-right {
+            bottom: 0;
+            right: 0;
+            border-bottom-style: solid;
+            border-right-style: solid;
+            border-top-style: none;
+            border-left-style: none;
+            border-bottom-right-radius: 5px;
+        }
+        
+        .scan-frame-corner.active {
+            border-color: #4caf50; /* Green when QR code is detected */
+            box-shadow: 0 0 8px rgba(76, 175, 80, 0.8);
+        }
+        .flip-camera-btn {
+            font-size: 1.5em;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>QR Code Generator</h1>
-        <form method="POST" id="qr-form">
+        <form method="POST" id="qr-form" action="/" onsubmit="return false;">
             <input type="text" name="url" placeholder="Enter the text or website URL" required>
             <div class="button-group">
                 <button type="submit" class="generate-btn">Generate QR Code</button>
+                <button type="button" id="scan-qr-btn" class="scan-qr-btn">Scan QR Code</button>
+            </div>
+            <div class="reset-container" id="reset-container">
                 <button type="button" id="reset-btn" class="reset-btn">Reset</button>
             </div>
         </form>
@@ -104,12 +325,32 @@
                 <img src="data:image/png;base64,{{ qr_image|b64encode }}" alt="QR Code">
             </div>
             <div class="download-btn" id="download-btn">
-                <button id="download-qr-btn">Download QR Code</button>
+                <button id="copy-qr-btn">Copy to Clipboard</button>
+                <button id="save-qr-btn" style="margin-left: 10px;">Save to Photos</button>
+            </div>
+            <div class="reset-container">
+                <button type="button" id="reset-btn-below" class="reset-btn">Reset</button>
             </div>
         {% endif %}
         {% if error %}
             <div class="error">{{ error }}</div>
         {% endif %}
+        <div id="video-container">
+            <video id="video" autoplay></video>
+            <div class="scan-frame-container" id="scan-frame-container">
+                <div class="scan-frame">
+                    <div class="scan-frame-corner top-left"></div>
+                    <div class="scan-frame-corner top-right"></div>
+                    <div class="scan-frame-corner bottom-left"></div>
+                    <div class="scan-frame-corner bottom-right"></div>
+                </div>
+            </div>
+            <div id="result-container">
+                <a href="#" target="_blank" id="result-link"></a>
+            </div>
+        </div>
+        <canvas id="canvas"></canvas>
+        <div id="result"></div>
     </div>
 
     <script>
@@ -119,26 +360,651 @@
             const downloadButton = document.getElementById('download-btn');
             const qrForm = document.getElementById('qr-form');
             const downloadQRBtn = document.getElementById('download-qr-btn');
+            const scanQRBtn = document.querySelector('.scan-qr-btn');
+            const copyQRBtn = document.getElementById('copy-qr-btn');
+            const saveQRBtn = document.getElementById('save-qr-btn');
+            const video = document.getElementById('video');
+            const resultContainer = document.getElementById('result-container');
+            const resetButtonBelow = document.getElementById('reset-btn-below');
+            const resetContainer = document.getElementById('reset-container');
+            const scanFrameContainer = document.getElementById('scan-frame-container');
+            const scanFrameCorners = document.querySelectorAll('.scan-frame-corner');
 
-            if (resetButton && qrImageContainer && downloadButton && qrForm && downloadQRBtn) {
-                resetButton.addEventListener('click', function() {
-                    qrImageContainer.remove();
-                    downloadButton.remove();
+            if (qrImageContainer) {
+                // Hide the top reset button if QR image is displayed
+                resetContainer.style.display = 'none';
+            }
+            
+            // Add event listener for both reset buttons
+            const resetButtons = [resetButton, resetButtonBelow].filter(button => button);
+            
+            resetButtons.forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault(); // Prevent form submission
+                    
+                    // Reset code here...
+                    if (qrImageContainer) {
+                        qrImageContainer.style.display = 'none';
+                    }
+                    
+                    if (downloadButton) {
+                        downloadButton.style.display = 'none';
+                    }
+                    
                     qrForm.reset();
+                    
+                    if (video && video.srcObject) {
+                        video.srcObject.getTracks().forEach(track => track.stop());
+                        video.style.display = 'none';
+                    }
+                    
+                    if (resultContainer) {
+                        resultContainer.style.display = 'none';
+                    }
+                    
+                    // Hide scan frame
+                    if (scanFrameContainer) {
+                        scanFrameContainer.style.display = 'none';
+                    }
+                    
+                    // Reset scan frame corners to default state
+                    if (scanFrameCorners) {
+                        scanFrameCorners.forEach(corner => {
+                            corner.classList.remove('active');
+                        });
+                    }
+                    
+                    // Show the top reset button again
+                    if (resetContainer) {
+                        resetContainer.style.display = 'block';
+                    }
+                    
+                    // If there's a reset button below elements, hide it
+                    if (resetButtonBelow && resetButtonBelow.parentElement) {
+                        resetButtonBelow.parentElement.style.display = 'none';
+                    }
+                    
+                    // Remove any scanner control buttons
+                    const scannerControls = document.querySelector('.scanner-controls');
+                    if (scannerControls) {
+                        scannerControls.remove();
+                    }
+                    
+                    // Navigate to reset URL
+                    window.location.href = '/?reset=true';
+                    
+                    return false; // Prevent default
                 });
+            });
 
-                downloadQRBtn.addEventListener('click', function() {
+            // Hide scan frame at page load
+            if (scanFrameContainer) {
+                scanFrameContainer.style.display = 'none';
+            }
+
+            if (scanQRBtn) {
+                scanQRBtn.addEventListener('click', function() {
+                    let usingFrontCamera = false;
+
+                    function startCameraStream() {
+                        const constraints = {
+                            video: { facingMode: usingFrontCamera ? 'user' : 'environment' }
+                        };
+                        if (video.srcObject) {
+                            video.srcObject.getTracks().forEach(track => track.stop());
+                        }
+                        navigator.mediaDevices.getUserMedia(constraints)
+                        .then(stream => {
+                            // Wait a brief moment to ensure video dimensions are set
+                            setTimeout(() => {
+                                // Show the video and scan frame
+                                video.style.display = 'block';
+                                scanFrameContainer.style.display = 'flex'; // Changed to flex for centering
+                                video.srcObject = stream;
+                                video.play();
+                                requestAnimationFrame(tick);
+                            }, 300); // Short delay to ensure video element is ready
+                        })
+                        .catch(() => alert('Unable to access camera.'));
+                    }
+
+                    const video = document.getElementById('video');
+                    const canvas = document.getElementById('canvas');
+                    const ctx = canvas.getContext('2d');
+                    const resultContainer = document.getElementById('result-container');
+                    const resultLink = document.getElementById('result-link');
+                    const scanFrameContainer = document.getElementById('scan-frame-container');
+                    const scanFrameCorners = document.querySelectorAll('.scan-frame-corner');
+                    
+                    // Initialize scan frame state
+                    let qrDetected = false;
+                    let detectionTimeout = null;
+
+                    // Stop any existing video streams first
+                    if (video.srcObject) {
+                        video.srcObject.getTracks().forEach(track => track.stop());
+                    }
+
+                    // Hide all elements first - including scan frame
+                    video.style.display = 'none';
+                    canvas.style.display = 'none';
+                    scanFrameContainer.style.display = 'none';
+                    
+                    // Clear and hide the result container
+                    resultContainer.innerHTML = ''; // Clear previous content
+                    resultContainer.style.display = 'none';
+
+                    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                        navigator.mediaDevices.getUserMedia({ video: true })
+                            .then(stream => {
+                                // Wait a brief moment to ensure video dimensions are set
+                                setTimeout(() => {
+                                    // Show the video and scan frame
+                                    video.style.display = 'block';
+                                    scanFrameContainer.style.display = 'flex'; // Changed to flex for centering
+                                    video.srcObject = stream;
+                                    video.play();
+                                    requestAnimationFrame(tick);
+                                }, 300); // Short delay to ensure video element is ready
+                            })
+                            .catch(() => alert('Unable to access camera.'));
+                    } else {
+                        alert('Camera not supported on this device.');
+                    }
+
+                    function tick() {
+                        if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                            // Set canvas dimensions to match video
+                            canvas.width = video.videoWidth;
+                            canvas.height = video.videoHeight;
+                            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+                            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                            const code = jsQR(imageData.data, canvas.width, canvas.height);
+                            
+                            // Update scan frame color based on QR detection
+                            if (code && code.data && code.data.trim().length > 0) {
+                                // QR code detected - set corners to green
+                                if (!qrDetected) {
+                                    qrDetected = true;
+                                    scanFrameCorners.forEach(corner => {
+                                        corner.classList.add('active');
+                                    });
+                                    
+                                    // Process QR code data
+                                    console.log("QR Code detected:", code.data);
+                                    
+                                    // Create a cleaner UI for the scanned result
+                                    resultContainer.innerHTML = ''; // Clear any existing content
+                                    
+                                    // Create link container
+                                    const linkContainer = document.createElement('div');
+                                    linkContainer.className = 'link-container';
+                                    
+                                    // Validate URL format before creating link
+                                    let url = code.data;
+                                    if (url && !url.match(/^https?:\/\//i)) {
+                                        // If URL doesn't start with http:// or https://, add it
+                                        if (url.match(/^www\./i)) {
+                                            url = 'https://' + url;
+                                        } else if (!url.includes('://')) {
+                                            // Plain text or non-URL might not need prefix
+                                            if (url.includes('.')) {
+                                                url = 'https://' + url;
+                                            }
+                                        }
+                                    }
+                                    
+                                    // Add a header
+                                    const headerText = document.createElement('div');
+                                    headerText.textContent = 'Scanned QR Code';
+                                    headerText.style.fontWeight = 'bold';
+                                    headerText.style.marginBottom = '8px';
+                                    headerText.style.textAlign = 'center';
+                                    linkContainer.appendChild(headerText);
+                                    
+                                    const linkElem = document.createElement('a');
+                                    linkElem.href = url;
+                                    linkElem.target = '_blank';
+                                    linkElem.textContent = code.data;
+                                    linkContainer.appendChild(linkElem);
+                                    
+                                    // Add a "Visit Link" button for better mobile/touch experience
+                                    if (url.match(/^https?:\/\//i)) {
+                                        const visitBtn = document.createElement('button');
+                                        visitBtn.className = 'visit-btn';
+                                        visitBtn.textContent = 'Visit Link';
+                                        visitBtn.addEventListener('click', function() {
+                                            window.open(url, '_blank');
+                                        });
+                                        linkContainer.appendChild(visitBtn);
+                                    }
+                                    
+                                    // Create the X button with modified functionality
+                                    const closeButton = document.createElement('button');
+                                    closeButton.className = 'close-btn';
+                                    closeButton.innerHTML = '&times;';
+                                    closeButton.title = 'Close Result';
+                                    closeButton.addEventListener('click', function() {
+                                        // Only hide the result container, keep video running
+                                        resultContainer.style.display = 'none';
+                                        
+                                        // Resume scanning by calling requestAnimationFrame again
+                                        requestAnimationFrame(tick);
+                                    });
+                                    
+                                    // Add link container and close button to the result container
+                                    resultContainer.appendChild(linkContainer);
+                                    resultContainer.appendChild(closeButton);
+                                    resultContainer.style.display = 'block';
+                                    
+                                    // Reset detection timeout if exists
+                                    if (detectionTimeout) {
+                                        clearTimeout(detectionTimeout);
+                                    }
+                                    
+                                    // Set a timeout to reset the scan frame color after a delay
+                                    detectionTimeout = setTimeout(() => {
+                                        qrDetected = false;
+                                        scanFrameCorners.forEach(corner => {
+                                            corner.classList.remove('active');
+                                        });
+                                        
+                                        // Only resume if video is still playing and result is hidden
+                                        if (video.srcObject && !video.paused && resultContainer.style.display === 'none') {
+                                            requestAnimationFrame(tick);
+                                        }
+                                    }, 3000);
+                                }
+                            } else {
+                                // No QR code detected - set corners to red (default)
+                                if (qrDetected) {
+                                    qrDetected = false;
+                                    scanFrameCorners.forEach(corner => {
+                                        corner.classList.remove('active');
+                                    });
+                                }
+                                
+                                // Continue scanning
+                                requestAnimationFrame(tick);
+                            }
+                        } else {
+                            requestAnimationFrame(tick);
+                        }
+                    }
+                    
+                    // Hide the top reset button when scanning
+                    if (resetContainer) {
+                        resetContainer.style.display = 'none';
+                    }
+                    
+                    // If there's a reset button below elements, show it
+                    if (resetButtonBelow) {
+                        resetButtonBelow.parentElement.style.display = 'block';
+                    }
+                    
+                    // Instead of adding the stop button directly to videoContainer,
+                    // Create a controls container that will hold both buttons
+                    const videoContainer = document.getElementById('video-container');
+                    const scannerControls = document.createElement('div');
+                    scannerControls.className = 'scanner-controls';
+                    
+                    const stopButton = document.createElement('button');
+                    stopButton.textContent = 'Stop Scanning';
+                    stopButton.className = 'stop-scan-btn';
+                    
+                    // Create a reset button that appears next to the stop button
+                    const scannerResetBtn = document.createElement('button');
+                    scannerResetBtn.textContent = 'Reset';
+                    scannerResetBtn.className = 'reset-btn';
+                    
+                    stopButton.addEventListener('click', function() {
+                        if (video.srcObject) {
+                            video.srcObject.getTracks().forEach(track => track.stop());
+                        }
+                        video.style.display = 'none';
+                        resultContainer.style.display = 'none';
+                        scannerControls.remove(); // Remove the controls container
+                        scanFrameContainer.style.display = 'none'; // Hide scan frame
+                        
+                        // Show the top reset button again
+                        if (resetContainer) {
+                            resetContainer.style.display = 'block';
+                        }
+                    });
+                    
+                    // Add reset functionality to scanner reset button
+                    scannerResetBtn.addEventListener('click', function() {
+                        if (video.srcObject) {
+                            video.srcObject.getTracks().forEach(track => track.stop());
+                        }
+                        video.style.display = 'none';
+                        resultContainer.style.display = 'none';
+                        scannerControls.remove(); // Remove the controls container
+                        scanFrameContainer.style.display = 'none'; // Hide scan frame
+                        
+                        // Show the top reset button again
+                        if (resetContainer) {
+                            resetContainer.style.display = 'block';
+                        }
+                        
+                        // Navigate to reset URL
+                        window.location.href = '/?reset=true';
+                    });
+                    
+                    // Add buttons to the controls container
+                    const flipCameraBtn = document.createElement('button');
+                    flipCameraBtn.innerHTML = '🔄'; // Changed text to icon
+                    flipCameraBtn.className = 'flip-camera-btn';
+                    flipCameraBtn.addEventListener('click', function() {
+                        usingFrontCamera = !usingFrontCamera;
+                        startCameraStream();
+                    });
+                    scannerControls.appendChild(stopButton);
+                    scannerControls.appendChild(flipCameraBtn);
+                    scannerControls.appendChild(scannerResetBtn);
+                    
+                    // Add the controls container to the video container
+                    videoContainer.appendChild(scannerControls);
+
+                    startCameraStream();
+                });
+            }
+
+            // Helper functions for copy and download
+            function copyToClipboard(qrImage) {
+                // For PC: Create a canvas and draw the image on it
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                canvas.width = qrImage.naturalWidth;
+                canvas.height = qrImage.naturalHeight;
+                
+                // Load image onto canvas
+                ctx.drawImage(qrImage, 0, 0);
+                
+                // Try to use the modern Clipboard API first
+                if (navigator.clipboard && navigator.clipboard.write) {
+                    canvas.toBlob(blob => {
+                        const item = new ClipboardItem({ 'image/png': blob });
+                        navigator.clipboard.write([item])
+                            .then(() => alert('QR code image copied to clipboard.'))
+                            .catch(err => {
+                                console.error('Failed to copy image: ', err);
+                                // Fallback to copying URL on failure
+                                navigator.clipboard.writeText(qrImage.src)
+                                    .then(() => alert('QR code URL copied to clipboard (image copy not supported in this browser).'))
+                                    .catch(() => alert('Copy failed.'));
+                            });
+                    });
+                } else {
+                    // Fallback for browsers without clipboard API support
+                    navigator.clipboard.writeText(qrImage.src)
+                        .then(() => alert('QR code URL copied to clipboard.'))
+                        .catch(() => alert('Copy failed.'));
+                }
+            }
+
+            function downloadImage(imgElement) {
+                const link = document.createElement('a');
+                link.href = imgElement.src;
+                link.download = 'qr-code.png';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                alert('QR code saved.');
+            }
+
+            // Add event listeners for copy/save buttons if they exist
+            if (copyQRBtn) {
+                copyQRBtn.addEventListener('click', function() {
                     const qrImage = document.querySelector('.qr-image img');
                     if (qrImage) {
-                        const imageUrl = qrImage.src;
-                        const link = document.createElement('a');
-                        link.href = imageUrl;
-                        link.download = 'qr-code.png'; // Set the filename for the download
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
+                        copyToClipboard(qrImage);
                     }
                 });
+            }
+
+            if (saveQRBtn) {
+                saveQRBtn.addEventListener('click', function() {
+                    const qrImage = document.querySelector('.qr-image img');
+                    if (qrImage) {
+                        // Check if we're on a mobile device
+                        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                        
+                        if (isMobile) {
+                            // On mobile - attempt to use the Web Share API if available
+                            if (navigator.share) {
+                                // Convert base64 image to blob
+                                fetch(qrImage.src)
+                                    .then(res => res.blob())
+                                    .then(blob => {
+                                        const file = new File([blob], 'qr-code.png', { type: 'image/png' });
+                                        navigator.share({
+                                            title: 'QR Code',
+                                            files: [file]
+                                        }).then(() => {
+                                            console.log('Share successful');
+                                        }).catch((error) => {
+                                            console.log('Sharing failed', error);
+                                            // Fallback to download
+                                            downloadImage(qrImage);
+                                        });
+                                    });
+                            } else {
+                                // Fallback to download on mobile
+                                downloadImage(qrImage);
+                            }
+                        } else {
+                            // On PC - use download functionality
+                            downloadImage(qrImage);
+                        }
+                    }
+                });
+            }
+
+            // Fix the generate QR code functionality to use AJAX instead of form submit
+            const generateBtn = document.querySelector('.generate-btn');
+            
+            if (qrForm && generateBtn) {
+                generateBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    // Get URL from input
+                    const urlInput = qrForm.querySelector('input[name="url"]');
+                    if (!urlInput || !urlInput.value.trim()) {
+                        alert("Please enter a website URL");
+                        return false;
+                    }
+                    
+                    // Remove any existing error messages
+                    const existingErrors = document.querySelectorAll('.error');
+                    existingErrors.forEach(el => el.remove());
+                    
+                    // IMPORTANT: Make sure to properly stop any active scanning
+                    /*
+                    const video = document.getElementById('video');
+                    if (video && video.srcObject) {
+                        const tracks = video.srcObject.getTracks();
+                        tracks.forEach(track => {
+                            // Explicitly stop each track
+                            track.stop();
+                        });
+                        video.srcObject = null; // Clear the source
+                        video.style.display = 'none';
+                    }
+                    
+                    // Make sure scan frame is hidden
+                    const scanFrameContainer = document.getElementById('scan-frame-container');
+                    if (scanFrameContainer) {
+                        scanFrameContainer.style.display = 'none';
+                    }
+                    
+                    // Remove any scanner controls - needs to be after stopping video
+                    const scannerControls = document.querySelector('.scanner-controls');
+                    if (scannerControls) {
+                        scannerControls.remove();
+                    }
+                    
+                    // Hide result container if visible
+                    const resultContainer = document.getElementById('result-container');
+                    if (resultContainer) {
+                        resultContainer.style.display = 'none';
+                        resultContainer.innerHTML = ''; // Clear content
+                    }
+                    */
+                    
+                    // Create FormData object from form
+                    const formData = new FormData(qrForm);
+                    
+                    // Send AJAX request to server
+                    fetch('/', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => response.text())
+                    .then(html => {
+                        // Extract the QR code image from the HTML response
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(html, 'text/html');
+                        
+                        // Check if there's an error message in the response
+                        const errorElem = doc.querySelector('.error');
+                        if (errorElem) {
+                            // Show error message
+                            const errorContainer = document.createElement('div');
+                            errorContainer.className = 'error';
+                            errorContainer.textContent = errorElem.textContent;
+                            qrForm.insertAdjacentElement('afterend', errorContainer);
+                            return;
+                        }
+                        
+                        // Find the QR code image in the response
+                        const qrImageDiv = doc.querySelector('.qr-image');
+                        const downloadBtnsDiv = doc.querySelector('.download-btn');
+                        
+                        if (qrImageDiv && downloadBtnsDiv) {
+                            // Remove any existing QR image
+                            const oldQrImage = document.querySelector('.qr-image');
+                            if (oldQrImage) oldQrImage.remove();
+                            
+                            // Remove any existing download buttons
+                            const oldDownloadBtns = document.querySelector('.download-btn');
+                            if (oldDownloadBtns) oldDownloadBtns.remove();
+                            
+                            // Add the new QR image and buttons to the page
+                            qrForm.insertAdjacentElement('afterend', downloadBtnsDiv);
+                            qrForm.insertAdjacentElement('afterend', qrImageDiv);
+                            
+                            // Re-initialize the buttons
+                            const copyQRBtn = document.getElementById('copy-qr-btn');
+                            const saveQRBtn = document.getElementById('save-qr-btn');
+                            const resetButtonBelow = document.getElementById('reset-btn-below');
+                            
+                            // Re-attach event listeners for the new buttons
+                            if (copyQRBtn) {
+                                copyQRBtn.addEventListener('click', function() {
+                                    const qrImage = document.querySelector('.qr-image img');
+                                    if (qrImage) {
+                                        copyToClipboard(qrImage);
+                                    }
+                                });
+                            }
+                            
+                            if (saveQRBtn) {
+                                saveQRBtn.addEventListener('click', function() {
+                                    const qrImage = document.querySelector('.qr-image img');
+                                    if (qrImage) {
+                                        downloadImage(qrImage);
+                                    }
+                                });
+                            }
+                            
+                            if (resetButtonBelow) {
+                                resetButtonBelow.addEventListener('click', function(e) {
+                                    e.preventDefault();
+                                    performReset();
+                                    window.location.replace('/?reset=true');
+                                });
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Failed to generate QR code. Please try again.');
+                    });
+                    
+                    return false;
+                });
+            }
+            
+            // Fix reset button functionality
+            function performReset() {
+                // Clear any generated QR code
+                const qrImageContainer = document.querySelector('.qr-image');
+                if (qrImageContainer) {
+                    qrImageContainer.remove();
+                }
+                
+                // Clear any buttons related to QR code
+                const downloadButton = document.querySelector('.download-btn');
+                if (downloadButton) {
+                    downloadButton.remove();
+                }
+                
+                // Stop and hide video elements if active
+                const video = document.getElementById('video');
+                if (video && video.srcObject) {
+                    video.srcObject.getTracks().forEach(track => track.stop());
+                    video.style.display = 'none';
+                }
+                
+                // Hide result container
+                const resultContainer = document.getElementById('result-container');
+                if (resultContainer) {
+                    resultContainer.style.display = 'none';
+                }
+                
+                // Hide scan frame
+                const scanFrameContainer = document.getElementById('scan-frame-container');
+                if (scanFrameContainer) {
+                    scanFrameContainer.style.display = 'none';
+                }
+                
+                // Reset scan frame corners to default state
+                const scanFrameCorners = document.querySelectorAll('.scan-frame-corner');
+                scanFrameCorners.forEach(corner => {
+                    corner.classList.remove('active');
+                });
+                
+                // Reset form fields
+                const qrForm = document.getElementById('qr-form');
+                if (qrForm) {
+                    qrForm.reset();
+                }
+                
+                // Remove any scanner controls
+                const scannerControls = document.querySelector('.scanner-controls');
+                if (scannerControls) {
+                    scannerControls.remove();
+                }
+                
+                // Remove any reset buttons below
+                const resetContainers = document.querySelectorAll('.reset-container');
+                if (resetContainers.length > 1) {
+                    for (let i = 1; i < resetContainers.length; i++) {
+                        resetContainers[i].remove();
+                    }
+                }
+                
+                // Make sure the top reset button is visible
+                const resetContainer = document.getElementById('reset-container');
+                if (resetContainer) {
+                    resetContainer.style.display = 'block';
+                }
+                
+                // Remove any error messages
+                const errorElements = document.querySelectorAll('.error');
+                errorElements.forEach(el => el.remove());
             }
         });
     </script>
